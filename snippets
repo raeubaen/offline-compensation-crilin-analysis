@@ -1,0 +1,23 @@
+#Hit_x/y/z in mm, la z è rovesciata quindi va invertita
+
+#file da usare: prediction_ruben_30GeV_scaled_pred_0p2_peperMeV.root, + output_electrons, output_pions, che non hanno lo smearing del light yield applicato però
+ # neanche le hit dentro prediction* hanno lo smearing applicato, ma la rete è calcolata dopo aver applicato sia quello che il taglio a 50 MeV sulle hit
+
+#22.7 è il fattore di conversione cherenkov totale - energia fascio per elettroni. Era più corretto fare Cherenkov vs EnergyTotal che è il totale depositato elettromagneticamente dentro Crilin, dovrebbe cambiare un 6-7%
+ #quello per il fattore di conversione è un altro plot da rifare mi sa, usando output_electrons.root
+
+# Hit_EScintillation non usarlo, c'è un baco
+
+# controllare sempre le unità di misura, non sono coerenti nei vari file: Geant4 è tutto in MeV tranne il cherenkov che è #fotoni, l'uscita dalla rete è mista...
+
+
+#con taglio a 50 MeV sulle hit
+events->SetAlias("variance", "Sum$((Hit_x*Hit_x+Hit_y+Hit_y)*Hit_NCherenkov*(Hit_NCherenkov/22.7 > 50))/Sum$(Hit_NCherenkov*(Hit_NCherenkov/22.7 > 50))")
+
+events->Draw("1e-3*(Sum$(Hit_NCherenkov)/22.7)/(PrimaryEnergy[0] - VD_energy[0]):sqrt(variance)", "Sum$(Hit_NCherenkov*(Hit_NCherenkov/22.7 > 50)) > 500", "zcol")
+
+
+events->SetAlias("rng","sin(2*TMath::Pi()*rndm)*sqrt(-2*log(rndm))"); 
+#gausssiana media 0 sigma 1
+
+
