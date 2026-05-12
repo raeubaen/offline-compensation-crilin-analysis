@@ -217,9 +217,9 @@ def cbFit(h,name,title,xmin=-1,xmax=-1):
 
     pt.AddText(f"m_{{core}} = {mean.getVal():.3g} #pm {mean.getError():.3g}")
     pt.AddText(f"#sigma_{{core}} = {sigma.getVal():.3g} #pm {sigma.getError():.3g}")
-    
+
     pt.Draw()
-    
+
     for ext in ["png","pdf","root"]:
         c.SaveAs(f"{name}.{ext}")
 
@@ -305,7 +305,7 @@ def plotDifferentialResolution(tree,selection=[],verbose=False,time=False):
     gsigma.Draw("APC")
     for ext in ["png","pdf","root"]:
         c.SaveAs(f"sigma_vs_E.{ext}")
-    
+
 def main():
     parser = argparse.ArgumentParser(
         description="Script to run simple analysis from a reconstructed multifit TTree"

@@ -1,3 +1,4 @@
+
 import argparse
 import ROOT
 import array
@@ -229,18 +230,19 @@ def cbFit(h,name,title,xmin=-1,xmax=-1):
     return {"mean":(mean.getVal(),mean.getError()),
             "sigma":(sigma.getVal(),sigma.getError())}
 
-def plotSingleResolution(tree,name,title,selection=[],verbose=False,nbins=200,just_gauss=False,time=False):
+def plotSingleResolution(tree,name,title,selection=[],verbose=False,nbins=50,just_gauss=False,time=False):
     sel=makeCut(selection,verbose)
 
     canvas = ROOT.TCanvas("c1", "resolutions", 800, 600)
 
-    tree.Draw("Sum$(Hit_NCherenkov / 24.3)/(PrimaryEnergy) - 1>>resotemp(1000, 0, 1)", "", "goff")
+    tree.SetAlias("Hit_CE", "Hit_NCherenkov/24.3*(Hit_z > -80)")
+    tree.Draw("Sum$(Hit_CE * (1 + rng/sqrt(Hit_CE))*(Hit_CE > 10))/(PrimaryEnergy) - 1>>resotemp(100, -0.5, 0.5)", "", "goff")
 
     resotemp = ROOT.gDirectory.Get("resotemp")
     m = resotemp.GetMean()
     s = resotemp.GetRMS()
     reso = ROOT.TH1F("reso","resolution",nbins,m-5*s,m+5*s)
-    tree.Draw("Sum$(Hit_NCherenkov / 24.3)/(PrimaryEnergy) - 1>> reso",sel, "goff")
+    tree.Draw("Sum$(Hit_CE * (1 + rng/sqrt(Hit_CE))*(Hit_CE > 10))/(PrimaryEnergy) - 1>> reso",sel, "goff")
     if not just_gauss: results = cbFit(reso,name,title)
     else: results = gaussFit(reso,name,title)
     return results
@@ -251,13 +253,13 @@ def plotDifferentialResolution(tree,selection=[],verbose=False,time=False):
     print ("Energy bins to be analysed: ",Ebins)
     for ie in range(len(Ebins)-1):
         print ("ie = ",ie)
-        addcut = f"PrimaryEnergy[0]>{Ebins[ie]} && PrimaryEnergy[0]<={Ebins[ie+1]}"
+        addcut = f"PrimaryEnergy[0]/1e3>{Ebins[ie]} && PrimaryEnergy[0]/1e3<={Ebins[ie+1]}"
         print ("Processing bin: ",addcut)
         fullsel = selection + [addcut]
 
         name = f"resolution_E{Ebins[ie]}To{Ebins[ie+1]}"
         title = f"{Ebins[ie]} GeV < E < {Ebins[ie+1]} GeV"
-        results = plotSingleResolution(tree,name,title,fullsel, nbins=100, just_gauss=False, time=time)
+        results = plotSingleResolution(tree,name,title,fullsel, nbins=200, just_gauss=False, time=time)
         b.append(results["mean"][0])
         eb.append(results["mean"][1])
         s.append(results["sigma"][0])
@@ -283,7 +285,7 @@ def plotDifferentialResolution(tree,selection=[],verbose=False,time=False):
     gbias.SetMarkerStyle(20)
     gbias.GetXaxis().SetTitle("Amplitude [GeV]")
     gbias.GetYaxis().SetTitle("Mean of E/E_{True} - 1")
-    
+
     gsigma.SetTitle("")
     gsigma.SetMarkerStyle(20)
     gsigma.GetXaxis().SetTitle("Amplitude [GeV]")
@@ -305,7 +307,7 @@ def plotDifferentialResolution(tree,selection=[],verbose=False,time=False):
     gsigma.Draw("APC")
     for ext in ["png","pdf","root"]:
         c.SaveAs(f"sigma_vs_E.{ext}")
-    
+
 def main():
     parser = argparse.ArgumentParser(
         description="Script to run simple analysis from a reconstructed multifit TTree"
